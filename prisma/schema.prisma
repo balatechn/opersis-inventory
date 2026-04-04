@@ -1,0 +1,296 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── AUTH & USERS ────────────────────────────────────────
+enum Role {
+  ADMIN
+  IT_MANAGER
+  VIEWER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(VIEWER)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  auditLogs      AuditLog[]
+  assignedAssets SystemAsset[]  @relation("AssignedUser")
+  softwareAssign Software[]     @relation("SoftwareAssignee")
+}
+
+// ─── SYSTEM ASSETS ───────────────────────────────────────
+enum AssetStatus {
+  ACTIVE
+  SPARE
+  REPAIR
+  SCRAP
+  TRANSFERRED
+}
+
+enum Company {
+  NCPL
+  NIPL
+  NRPL
+  RAINLAND_AUTO_CORP
+  ISKY
+  OTHER
+}
+
+model SystemAsset {
+  id                 String      @id @default(cuid())
+  assetTag           String      @unique
+  productName        String
+  serialNumber       String?
+  make               String?
+  config             String?
+  osVersion          String?
+  company            Company     @default(NCPL)
+  department         String?
+  location           String?
+  vendorDetails      String?
+  purchaseDate       DateTime?
+  invoiceNumber      String?
+  cost               Float?
+  warrantyPeriod     String?
+  warrantyExpiry     DateTime?
+  maintenanceSchedule DateTime?
+  status             AssetStatus @default(ACTIVE)
+  remarks            String?
+  previousUser       String?
+  phone              String?
+  emailId            String?
+  officeAppId        String?
+  softwareInstalled  String?
+  logRetention       String?
+  invoiceUrl         String?
+  depreciationRate   Float?      @default(25)
+  bookValue          Float?
+
+  assignedUserId String?
+  assignedUser   User?    @relation("AssignedUser", fields: [assignedUserId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transfers  AssetTransfer[]
+  expenses   Expense[]
+
+  @@index([company])
+  @@index([status])
+  @@index([location])
+  @@index([department])
+}
+
+model AssetTransfer {
+  id              String   @id @default(cuid())
+  assetId         String
+  asset           SystemAsset @relation(fields: [assetId], references: [id])
+  fromUser        String?
+  toUser          String?
+  fromLocation    String?
+  toLocation      String?
+  transferDate    DateTime @default(now())
+  notes           String?
+  reason          String?
+
+  @@index([assetId])
+}
+
+// ─── SOFTWARE ────────────────────────────────────────────
+enum LicenseType {
+  SUBSCRIPTION
+  PERPETUAL
+}
+
+model Software {
+  id                String      @id @default(cuid())
+  name              String
+  vendor            String?
+  company           String?     @default("National Consulting")
+  department        String?
+  licenseType       LicenseType @default(SUBSCRIPTION)
+  totalLicenses     Int         @default(1)
+  usedLicenses      Int         @default(0)
+  costPerLicense    Float?
+  totalCost         Float?
+  purchaseDate      DateTime?
+  expiryDate        DateTime?
+  renewalDate       DateTime?
+  licenseKey        String?
+  activationCode    String?
+  invoiceNumber     String?
+  invoiceUrl        String?
+  category          String?
+  versionEdition    String?
+  deviceAssetTag    String?
+  notes             String?
+  remarks           String?
+  paymentStatusDate DateTime?
+
+  assignedToId String?
+  assignedTo   User?    @relation("SoftwareAssignee", fields: [assignedToId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  expenses  Expense[]
+
+  @@index([expiryDate])
+  @@index([company])
+}
+
+// ─── PURCHASES / REQUESTS ────────────────────────────────
+enum PurchaseStatus {
+  PENDING
+  APPROVED
+  PAYMENT_DUE
+  COMPLETED
+  REJECTED
+}
+
+enum ItemCategory {
+  HARDWARE
+  SOFTWARE
+  NETWORKING
+  PERIPHERAL
+  CLOUD_SERVICE
+  OTHER
+}
+
+enum PurchaseMethod {
+  ONLINE
+  OFFLINE
+  VENDOR_DIRECT
+  COMPANY_PURCHASE
+}
+
+model Purchase {
+  id              String         @id @default(cuid())
+  requestedBy     String
+  department      String?
+  company         String?        @default("NCPL")
+  date            DateTime       @default(now())
+  productName     String
+  category        String?        @default("HARDWARE")
+  quantity        Int            @default(1)
+  estimatedCost   Float?
+  actualCost      Float?
+  vendorName      String?
+  vendorContact   String?
+  purchaseMethod  String?
+  justification   String?
+  priority        String?        @default("Normal")
+  remarks         String?
+  invoiceNumber   String?
+  expectedDelivery DateTime?
+  quotationReceived Boolean      @default(false)
+  purchaseOrderSent Boolean      @default(false)
+  paymentDone     Boolean        @default(false)
+  delivered       Boolean        @default(false)
+
+  approvedBy   String?
+  status       PurchaseStatus @default(PENDING)
+  approvalDate DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  expenses Expense[]
+
+  @@index([status])
+}
+
+// ─── EXPENSES ────────────────────────────────────────────
+enum ExpenseType {
+  HARDWARE
+  SOFTWARE
+  NETWORKING
+  INTERNET_TELECOM
+  CLOUD_SERVICES
+  MAINTENANCE
+  CONSUMABLES
+  AMC
+  LICENSING
+  OTHER
+}
+
+enum PaymentStatus {
+  PAID
+  UNPAID
+  PARTIAL
+}
+
+model Expense {
+  id            String        @id @default(cuid())
+  description   String
+  type          String?       @default("OTHER")
+  vendor        String?
+  invoiceNumber String?
+  amount        Float
+  gst           Float?        @default(0)
+  totalAmount   Float
+  date          DateTime      @default(now())
+  paymentStatus String?       @default("UNPAID")
+  paymentDate   DateTime?
+  company       String?       @default("NCPL")
+  department    String?
+  remarks       String?
+
+  assetId    String?
+  asset      SystemAsset? @relation(fields: [assetId], references: [id])
+  softwareId String?
+  software   Software?    @relation(fields: [softwareId], references: [id])
+  purchaseId String?
+  purchase   Purchase?    @relation(fields: [purchaseId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@index([company])
+  @@index([type])
+  @@index([paymentStatus])
+}
+
+// ─── AUDIT LOGS ──────────────────────────────────────────
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String
+  entity     String
+  entityId   String?
+  details    String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ─── NOTIFICATIONS ───────────────────────────────────────
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  type      String   @default("info")
+  read      Boolean  @default(false)
+  link      String?
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@index([read])
+  @@index([createdAt])
+}
