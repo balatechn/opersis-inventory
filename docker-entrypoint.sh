@@ -1,7 +1,7 @@
 #!/bin/sh
 
 echo "Running database migrations..."
-npx prisma db push --accept-data-loss 2>&1 || echo "WARNING: Migration failed, continuing..."
+node ./node_modules/prisma/build/index.js db push --accept-data-loss 2>&1 || echo "WARNING: Migration failed, continuing..."
 
 echo "Starting application..."
 exec node server.js
