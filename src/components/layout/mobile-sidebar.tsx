@@ -15,6 +15,7 @@ import {
   X,
   Cpu,
   User,
+  Users,
   Wallet,
   Building2,
   ShieldAlert,
@@ -34,6 +35,7 @@ const menuItems = [
 ];
 
 const adminItems = [
+  { href: "/dashboard/users", label: "Users", icon: Users },
   { href: "/dashboard/audit-log", label: "Audit Log", icon: ScrollText },
   { href: "/dashboard/reports", label: "Reports", icon: BarChart3 },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },

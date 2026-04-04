@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { PageTransition } from "@/components/layout/page-transition";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,24 +13,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
+import { TablePagination } from "@/components/ui/table-pagination";
+import { SortableHeader } from "@/components/ui/sortable-header";
 import { Plus, Search, Receipt, Download, IndianRupee, TrendingUp, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { formatCurrency, formatDate, COMPANIES, DEPARTMENTS } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, ResponsiveContainer } from "recharts";
 
 interface ExpenseItem {
-  id: string;
-  description: string;
-  date: string;
-  type: string;
-  vendor: string | null;
-  invoiceNumber: string | null;
-  amount: number;
-  gst: number | null;
-  totalAmount: number;
-  paymentStatus: string;
-  company: string;
-  department: string | null;
-  remarks: string | null;
+  id: string; description: string; date: string; type: string; vendor: string | null;
+  invoiceNumber: string | null; amount: number; gst: number | null; totalAmount: number;
+  paymentStatus: string; company: string; department: string | null; remarks: string | null;
 }
 
 const EXPENSE_TYPES = ["HARDWARE", "SOFTWARE", "INTERNET_TELECOM", "AMC", "CLOUD_SERVICES", "LICENSING", "MAINTENANCE", "CONSUMABLES", "NETWORKING", "OTHER"];
@@ -44,6 +36,10 @@ export default function ExpensesPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<ExpenseItem | null>(null);
   const [saving, setSaving] = useState(false);
+  const [sortKey, setSortKey] = useState("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [form, setForm] = useState({
     description: "", type: "OTHER", vendor: "", invoiceNumber: "",
     amount: "", gst: "", date: "", paymentStatus: "UNPAID",
@@ -52,26 +48,34 @@ export default function ExpensesPage() {
 
   const fetchExpenses = () => {
     setLoading(true);
-    fetch("/api/expenses")
-      .then((r) => r.json())
-      .then((d) => setExpenses(d.data || d))
-      .catch(() => setExpenses([]))
-      .finally(() => setLoading(false));
+    fetch("/api/expenses").then((r) => r.json()).then((d) => setExpenses(d.data || d)).catch(() => setExpenses([])).finally(() => setLoading(false));
   };
-
   useEffect(() => { fetchExpenses(); }, []);
 
   const filtered = useMemo(() => {
-    return expenses.filter((e) => {
-      const matchSearch = !search ||
-        e.vendor?.toLowerCase().includes(search.toLowerCase()) ||
-        e.invoiceNumber?.toLowerCase().includes(search.toLowerCase()) ||
-        e.description?.toLowerCase().includes(search.toLowerCase());
+    let result = expenses.filter((e) => {
+      const matchSearch = !search || e.vendor?.toLowerCase().includes(search.toLowerCase()) || e.invoiceNumber?.toLowerCase().includes(search.toLowerCase()) || e.description?.toLowerCase().includes(search.toLowerCase());
       const matchType = typeFilter === "ALL" || e.type === typeFilter;
       const matchStatus = statusFilter === "ALL" || e.paymentStatus === statusFilter;
       return matchSearch && matchType && matchStatus;
     });
-  }, [expenses, search, typeFilter, statusFilter]);
+    result.sort((a, b) => {
+      const av = (a as any)[sortKey] ?? "";
+      const bv = (b as any)[sortKey] ?? "";
+      const cmp = typeof av === "number" ? av - bv : String(av).localeCompare(String(bv));
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return result;
+  }, [expenses, search, typeFilter, statusFilter, sortKey, sortDir]);
+
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  const handleSort = useCallback((key: string) => {
+    if (sortKey === key) setSortDir((d) => d === "asc" ? "desc" : "asc");
+    else { setSortKey(key); setSortDir("asc"); }
+    setPage(1);
+  }, [sortKey]);
 
   const totalPaid = filtered.filter((e) => e.paymentStatus === "PAID").reduce((s, e) => s + e.totalAmount, 0);
   const totalUnpaid = filtered.filter((e) => e.paymentStatus === "UNPAID").reduce((s, e) => s + e.totalAmount, 0);
@@ -84,44 +88,27 @@ export default function ExpensesPage() {
   }, [filtered]);
 
   const handleExport = () => {
-    const csv = [
-      ["Date", "Type", "Vendor", "Invoice", "Amount", "GST", "Total", "Status", "Company"],
-      ...filtered.map((e) => [e.date, e.type, e.vendor || "", e.invoiceNumber || "", String(e.amount), String(e.gst || 0), String(e.totalAmount), e.paymentStatus, e.company]),
-    ].map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a"); link.href = url; link.download = "expenses.csv"; link.click();
-    URL.revokeObjectURL(url);
+    const csv = [["Date","Type","Vendor","Invoice","Amount","GST","Total","Status","Company"], ...filtered.map((e) => [e.date, e.type, e.vendor || "", e.invoiceNumber || "", String(e.amount), String(e.gst || 0), String(e.totalAmount), e.paymentStatus, e.company])].map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" }); const url = URL.createObjectURL(blob);
+    const link = document.createElement("a"); link.href = url; link.download = "expenses.csv"; link.click(); URL.revokeObjectURL(url);
   };
 
   const openEdit = (e: ExpenseItem) => {
     setEditItem(e);
-    setForm({
-      description: e.description, type: e.type, vendor: e.vendor || "",
-      invoiceNumber: e.invoiceNumber || "", amount: String(e.amount), gst: String(e.gst || 0),
-      date: e.date ? e.date.split("T")[0] : "", paymentStatus: e.paymentStatus,
-      company: e.company, department: e.department || "", remarks: e.remarks || "",
-    });
+    setForm({ description: e.description, type: e.type, vendor: e.vendor || "", invoiceNumber: e.invoiceNumber || "", amount: String(e.amount), gst: String(e.gst || 0), date: e.date ? e.date.split("T")[0] : "", paymentStatus: e.paymentStatus, company: e.company, department: e.department || "", remarks: e.remarks || "" });
     setEditOpen(true);
   };
 
   const handleUpdate = async () => {
     if (!editItem) return;
     setSaving(true);
-    await fetch(`/api/expenses/${editItem.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, amount: parseFloat(form.amount) || 0, gst: parseFloat(form.gst) || 0 }),
-    });
-    setSaving(false);
-    setEditOpen(false);
-    fetchExpenses();
+    await fetch(`/api/expenses/${editItem.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, amount: parseFloat(form.amount) || 0, gst: parseFloat(form.gst) || 0 }) });
+    setSaving(false); setEditOpen(false); fetchExpenses();
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this expense record?")) return;
-    await fetch(`/api/expenses/${id}`, { method: "DELETE" });
-    fetchExpenses();
+    await fetch(`/api/expenses/${id}`, { method: "DELETE" }); fetchExpenses();
   };
 
   return (
@@ -129,7 +116,7 @@ export default function ExpensesPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">IT Expense Tracker</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">IT Expense Tracker</h1>
             <p className="text-sm text-muted-foreground">{filtered.length} expense records</p>
           </div>
           <div className="flex gap-2">
@@ -166,15 +153,12 @@ export default function ExpensesPage() {
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input placeholder="Search vendor, invoice..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
-              </div>
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <div className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input placeholder="Search vendor, invoice..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="pl-9" /></div>
+              <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v); setPage(1); }}>
                 <SelectTrigger className="w-full sm:w-[160px]"><SelectValue placeholder="Type" /></SelectTrigger>
                 <SelectContent><SelectItem value="ALL">All Types</SelectItem>{EXPENSE_TYPES.map((t) => (<SelectItem key={t} value={t}>{t}</SelectItem>))}</SelectContent>
               </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
                 <SelectTrigger className="w-full sm:w-[150px]"><SelectValue placeholder="Payment" /></SelectTrigger>
                 <SelectContent><SelectItem value="ALL">All</SelectItem><SelectItem value="PAID">Paid</SelectItem><SelectItem value="UNPAID">Unpaid</SelectItem><SelectItem value="PARTIAL">Partial</SelectItem></SelectContent>
               </Select>
@@ -186,26 +170,26 @@ export default function ExpensesPage() {
           {loading ? (
             <CardContent className="p-6 space-y-3">{[...Array(5)].map((_, i) => (<Skeleton key={i} className="h-12 rounded-lg" />))}</CardContent>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="hidden md:table-cell">Vendor</TableHead>
-                    <TableHead className="hidden lg:table-cell">Invoice</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="hidden md:table-cell text-right">GST</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-[60px]" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={9} className="text-center py-12 text-muted-foreground"><Receipt className="h-8 w-8 mx-auto mb-2 opacity-30" />No expenses found</TableCell></TableRow>
-                  ) : (
-                    filtered.map((e) => (
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead><SortableHeader label="Date" sortKey="date" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} /></TableHead>
+                      <TableHead><SortableHeader label="Type" sortKey="type" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} /></TableHead>
+                      <TableHead className="hidden md:table-cell"><SortableHeader label="Vendor" sortKey="vendor" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} /></TableHead>
+                      <TableHead className="hidden lg:table-cell">Invoice</TableHead>
+                      <TableHead className="text-right"><SortableHeader label="Amount" sortKey="amount" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} className="justify-end" /></TableHead>
+                      <TableHead className="hidden md:table-cell text-right">GST</TableHead>
+                      <TableHead className="text-right"><SortableHeader label="Total" sortKey="totalAmount" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} className="justify-end" /></TableHead>
+                      <TableHead><SortableHeader label="Status" sortKey="paymentStatus" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} /></TableHead>
+                      <TableHead className="w-[60px]" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginated.length === 0 ? (
+                      <TableRow><TableCell colSpan={9} className="text-center py-12 text-muted-foreground"><Receipt className="h-8 w-8 mx-auto mb-2 opacity-30" />No expenses found</TableCell></TableRow>
+                    ) : paginated.map((e) => (
                       <TableRow key={e.id}>
                         <TableCell className="text-xs">{formatDate(e.date)}</TableCell>
                         <TableCell><Badge variant="outline" className="text-xs">{e.type}</Badge></TableCell>
@@ -225,11 +209,12 @@ export default function ExpensesPage() {
                           </DropdownMenu>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <TablePagination currentPage={page} totalPages={totalPages} totalItems={filtered.length} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
+            </>
           )}
         </Card>
 
