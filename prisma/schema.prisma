@@ -294,3 +294,49 @@ model Notification {
   @@index([read])
   @@index([createdAt])
 }
+
+// ─── BUDGET ──────────────────────────────────────────────
+model Budget {
+  id          String   @id @default(cuid())
+  name        String
+  company     String?  @default("NCPL")
+  department  String?
+  category    String?  @default("OVERALL")
+  period      String   @default("MONTHLY")
+  month       Int?
+  year        Int
+  amount      Float
+  spent       Float    @default(0)
+  alertAt     Float    @default(80)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([company, department, category, period, month, year])
+  @@index([company])
+  @@index([year])
+}
+
+// ─── VENDOR MASTER ───────────────────────────────────────
+model Vendor {
+  id            String   @id @default(cuid())
+  name          String
+  contactPerson String?
+  email         String?
+  phone         String?
+  address       String?
+  city          String?
+  state         String?
+  gstNumber     String?
+  panNumber     String?
+  bankDetails   String?
+  category      String?  @default("GENERAL")
+  website       String?
+  notes         String?
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([name])
+  @@index([category])
+}

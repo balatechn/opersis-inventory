@@ -15,6 +15,10 @@ import {
   X,
   Cpu,
   User,
+  Wallet,
+  Building2,
+  ShieldAlert,
+  ScrollText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -24,9 +28,13 @@ const menuItems = [
   { href: "/dashboard/software", label: "Software", icon: Package },
   { href: "/dashboard/purchases", label: "Purchases", icon: ShoppingCart },
   { href: "/dashboard/expenses", label: "Expenses", icon: Receipt },
+  { href: "/dashboard/budgets", label: "Budgets", icon: Wallet },
+  { href: "/dashboard/vendors", label: "Vendors", icon: Building2 },
+  { href: "/dashboard/alerts", label: "Alerts", icon: ShieldAlert },
 ];
 
 const adminItems = [
+  { href: "/dashboard/audit-log", label: "Audit Log", icon: ScrollText },
   { href: "/dashboard/reports", label: "Reports", icon: BarChart3 },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];

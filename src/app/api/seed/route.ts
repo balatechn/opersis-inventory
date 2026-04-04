@@ -748,6 +748,29 @@ export async function POST(request: Request) {
       ],
     });
 
+    // Create Budgets
+    await prisma.budget.createMany({
+      data: [
+        { name: "IT Hardware Q4 2024", company: "NCPL", department: "IT Department", category: "Hardware", period: "QUARTERLY", month: 10, year: 2024, amount: 500000, spent: 316830, alertAt: 80 },
+        { name: "Software Licenses 2024", company: "NCPL", department: "IT Department", category: "Software", period: "YEARLY", year: 2024, amount: 1200000, spent: 1002015, alertAt: 85 },
+        { name: "Cloud & Hosting 2024", company: "NCPL", department: "IT Department", category: "Cloud", period: "YEARLY", year: 2024, amount: 300000, spent: 218300, alertAt: 80 },
+        { name: "IT Infrastructure Oct 2024", company: "NCPL", department: "IT Department", category: "Infrastructure", period: "MONTHLY", month: 10, year: 2024, amount: 150000, spent: 50150, alertAt: 75 },
+        { name: "Marketing Tech 2024", company: "NCPL", department: "Marketing", category: "Software", period: "YEARLY", year: 2024, amount: 250000, spent: 194700, alertAt: 80 },
+      ],
+    });
+
+    // Create Vendors
+    await prisma.vendor.createMany({
+      data: [
+        { name: "Dell Technologies India", contactPerson: "Suresh Patel", email: "enterprise@dell.co.in", phone: "+91 1800-425-3355", address: "DLF Cyber City, Phase 2", city: "Gurugram", state: "Haryana", gstNumber: "06AABCD1234E1Z5", category: "Hardware", website: "https://www.dell.co.in", active: true },
+        { name: "Microsoft India Pvt Ltd", contactPerson: "Rajiv Sharma", email: "licensing@microsoft.co.in", phone: "+91 1800-102-1100", address: "DLF Building No. 10A", city: "Gurugram", state: "Haryana", gstNumber: "06AABCM5678F1Z2", category: "Software", website: "https://www.microsoft.com/en-in", active: true },
+        { name: "HP India Sales Pvt Ltd", contactPerson: "Anita Desai", email: "sales@hp.co.in", phone: "+91 1800-108-4747", address: "DLF IT Park", city: "Chennai", state: "Tamil Nadu", gstNumber: "33AABCH9012G1Z8", category: "Hardware", website: "https://www.hp.com/in-en", active: true },
+        { name: "IT Solutions Ahmedabad", contactPerson: "Kiran Joshi", email: "info@itsolutions-ahd.com", phone: "+91 79 2658 9900", address: "Satellite Road, Jodhpur Cross Roads", city: "Ahmedabad", state: "Gujarat", gstNumber: "24AABCI3456H1Z4", category: "Networking", active: true },
+        { name: "Tally Solutions Pvt Ltd", contactPerson: "Support Team", email: "support@tallysolutions.com", phone: "+91 80-4674-6600", city: "Bangalore", state: "Karnataka", gstNumber: "29AABCT7890J1Z1", category: "Software", website: "https://tallysolutions.com", active: true },
+        { name: "Zoho Corporation Pvt Ltd", contactPerson: "Account Manager", email: "sales@zoho.com", phone: "+91 44-4687-9130", city: "Chennai", state: "Tamil Nadu", gstNumber: "33AABCZ1234K1Z7", category: "Software", website: "https://www.zoho.com", active: true },
+      ],
+    });
+
     return NextResponse.json({
       success: true,
       message: "Database seeded successfully!",
@@ -757,6 +780,8 @@ export async function POST(request: Request) {
         software: softwareList.length,
         purchases: purchases.length,
         expenses: expenses.length,
+        budgets: 5,
+        vendors: 6,
       },
     });
   } catch (error: unknown) {

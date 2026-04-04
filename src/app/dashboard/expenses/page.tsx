@@ -10,15 +10,19 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Receipt, Download, IndianRupee, TrendingUp } from "lucide-react";
-import { formatCurrency, formatDate, COMPANIES } from "@/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
+import { Plus, Search, Receipt, Download, IndianRupee, TrendingUp, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { formatCurrency, formatDate, COMPANIES, DEPARTMENTS } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, ResponsiveContainer } from "recharts";
 
 interface ExpenseItem {
   id: string;
-  expenseDate: string;
-  expenseType: string;
-  vendorName: string | null;
+  description: string;
+  date: string;
+  type: string;
+  vendor: string | null;
   invoiceNumber: string | null;
   amount: number;
   gst: number | null;
@@ -26,10 +30,10 @@ interface ExpenseItem {
   paymentStatus: string;
   company: string;
   department: string | null;
-  description: string | null;
+  remarks: string | null;
 }
 
-const EXPENSE_TYPES = ["HARDWARE", "SOFTWARE", "INTERNET", "AMC", "CLOUD", "LICENSING", "MAINTENANCE", "OTHER"];
+const EXPENSE_TYPES = ["HARDWARE", "SOFTWARE", "INTERNET_TELECOM", "AMC", "CLOUD_SERVICES", "LICENSING", "MAINTENANCE", "CONSUMABLES", "NETWORKING", "OTHER"];
 
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
@@ -37,31 +41,33 @@ export default function ExpensesPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [editOpen, setEditOpen] = useState(false);
+  const [editItem, setEditItem] = useState<ExpenseItem | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    description: "", type: "OTHER", vendor: "", invoiceNumber: "",
+    amount: "", gst: "", date: "", paymentStatus: "UNPAID",
+    company: "NCPL", department: "", remarks: "",
+  });
 
-  useEffect(() => {
+  const fetchExpenses = () => {
+    setLoading(true);
     fetch("/api/expenses")
       .then((r) => r.json())
       .then((d) => setExpenses(d.data || d))
-      .catch(() => {
-        setExpenses([
-          { id: "1", expenseDate: "2026-03-01", expenseType: "SOFTWARE", vendorName: "Microsoft", invoiceNumber: "MS-2026-001", amount: 75000, gst: 13500, totalAmount: 88500, paymentStatus: "PAID", company: "NCPL", department: "IT", description: "Microsoft 365 renewal" },
-          { id: "2", expenseDate: "2026-03-05", expenseType: "HARDWARE", vendorName: "Dell", invoiceNumber: "DL-2026-045", amount: 125000, gst: 22500, totalAmount: 147500, paymentStatus: "PAID", company: "NCPL", department: "IT", description: "Dell XPS 15 Laptop" },
-          { id: "3", expenseDate: "2026-03-10", expenseType: "CLOUD", vendorName: "AWS", invoiceNumber: "AWS-MAR-26", amount: 25000, gst: 4500, totalAmount: 29500, paymentStatus: "UNPAID", company: "NCPL", department: "IT", description: "AWS monthly charges" },
-          { id: "4", expenseDate: "2026-03-15", expenseType: "INTERNET", vendorName: "Airtel", invoiceNumber: "AIR-2026-03", amount: 12000, gst: 2160, totalAmount: 14160, paymentStatus: "PAID", company: "RAINLAND_AUTO_CORP", department: "Admin", description: "Internet charges - Bangalore office" },
-          { id: "5", expenseDate: "2026-03-20", expenseType: "AMC", vendorName: "HP Services", invoiceNumber: "HP-AMC-2026", amount: 45000, gst: 8100, totalAmount: 53100, paymentStatus: "UNPAID", company: "NCPL", department: "IT", description: "Printer AMC renewal" },
-          { id: "6", expenseDate: "2026-02-15", expenseType: "SOFTWARE", vendorName: "Adobe", invoiceNumber: "AD-2026-012", amount: 30000, gst: 5400, totalAmount: 35400, paymentStatus: "PAID", company: "ISKY", department: "Marketing", description: "Adobe CC subscription" },
-        ]);
-      })
+      .catch(() => setExpenses([]))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { fetchExpenses(); }, []);
 
   const filtered = useMemo(() => {
     return expenses.filter((e) => {
       const matchSearch = !search ||
-        e.vendorName?.toLowerCase().includes(search.toLowerCase()) ||
+        e.vendor?.toLowerCase().includes(search.toLowerCase()) ||
         e.invoiceNumber?.toLowerCase().includes(search.toLowerCase()) ||
         e.description?.toLowerCase().includes(search.toLowerCase());
-      const matchType = typeFilter === "ALL" || e.expenseType === typeFilter;
+      const matchType = typeFilter === "ALL" || e.type === typeFilter;
       const matchStatus = statusFilter === "ALL" || e.paymentStatus === statusFilter;
       return matchSearch && matchType && matchStatus;
     });
@@ -71,29 +77,51 @@ export default function ExpensesPage() {
   const totalUnpaid = filtered.filter((e) => e.paymentStatus === "UNPAID").reduce((s, e) => s + e.totalAmount, 0);
   const totalExpense = filtered.reduce((s, e) => s + e.totalAmount, 0);
 
-  // Group by type for chart
   const byType = useMemo(() => {
     const map: Record<string, number> = {};
-    filtered.forEach((e) => { map[e.expenseType] = (map[e.expenseType] || 0) + e.totalAmount; });
-    return Object.entries(map).map(([name, value]) => ({ name: name.charAt(0) + name.slice(1).toLowerCase(), value }));
+    filtered.forEach((e) => { map[e.type] = (map[e.type] || 0) + e.totalAmount; });
+    return Object.entries(map).map(([name, value]) => ({ name: name.charAt(0) + name.slice(1).toLowerCase().replace(/_/g, " "), value }));
   }, [filtered]);
 
   const handleExport = () => {
     const csv = [
-      ["Date", "Type", "Vendor", "Invoice", "Amount", "GST", "Total", "Status", "Company", "Department"],
-      ...filtered.map((e) => [
-        e.expenseDate, e.expenseType, e.vendorName || "", e.invoiceNumber || "",
-        String(e.amount), String(e.gst || 0), String(e.totalAmount),
-        e.paymentStatus, e.company, e.department || "",
-      ]),
+      ["Date", "Type", "Vendor", "Invoice", "Amount", "GST", "Total", "Status", "Company"],
+      ...filtered.map((e) => [e.date, e.type, e.vendor || "", e.invoiceNumber || "", String(e.amount), String(e.gst || 0), String(e.totalAmount), e.paymentStatus, e.company]),
     ].map((r) => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "expenses_report.csv";
-    link.click();
+    const link = document.createElement("a"); link.href = url; link.download = "expenses.csv"; link.click();
     URL.revokeObjectURL(url);
+  };
+
+  const openEdit = (e: ExpenseItem) => {
+    setEditItem(e);
+    setForm({
+      description: e.description, type: e.type, vendor: e.vendor || "",
+      invoiceNumber: e.invoiceNumber || "", amount: String(e.amount), gst: String(e.gst || 0),
+      date: e.date ? e.date.split("T")[0] : "", paymentStatus: e.paymentStatus,
+      company: e.company, department: e.department || "", remarks: e.remarks || "",
+    });
+    setEditOpen(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!editItem) return;
+    setSaving(true);
+    await fetch(`/api/expenses/${editItem.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...form, amount: parseFloat(form.amount) || 0, gst: parseFloat(form.gst) || 0 }),
+    });
+    setSaving(false);
+    setEditOpen(false);
+    fetchExpenses();
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this expense record?")) return;
+    await fetch(`/api/expenses/${id}`, { method: "DELETE" });
+    fetchExpenses();
   };
 
   return (
@@ -105,38 +133,17 @@ export default function ExpensesPage() {
             <p className="text-sm text-muted-foreground">{filtered.length} expense records</p>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={handleExport} className="gap-1.5">
-              <Download className="h-4 w-4" />Export
-            </Button>
-            <Link href="/dashboard/expenses/new">
-              <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" />Add Expense</Button>
-            </Link>
+            <Button size="sm" variant="outline" onClick={handleExport} className="gap-1.5"><Download className="h-4 w-4" />Export</Button>
+            <Link href="/dashboard/expenses/new"><Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" />Add Expense</Button></Link>
           </div>
         </div>
 
-        {/* Summary */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600"><IndianRupee className="h-5 w-5" /></div>
-              <div><p className="text-2xl font-bold">{formatCurrency(totalExpense)}</p><p className="text-xs text-muted-foreground">Total Expense</p></div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-green-50 text-green-600"><TrendingUp className="h-5 w-5" /></div>
-              <div><p className="text-2xl font-bold">{formatCurrency(totalPaid)}</p><p className="text-xs text-muted-foreground">Paid</p></div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-red-50 text-red-600"><Receipt className="h-5 w-5" /></div>
-              <div><p className="text-2xl font-bold">{formatCurrency(totalUnpaid)}</p><p className="text-xs text-muted-foreground">Unpaid</p></div>
-            </CardContent>
-          </Card>
+          <Card className="border-0 shadow-sm"><CardContent className="p-4 flex items-center gap-3"><div className="p-2.5 rounded-xl bg-blue-50 text-blue-600"><IndianRupee className="h-5 w-5" /></div><div><p className="text-2xl font-bold">{formatCurrency(totalExpense)}</p><p className="text-xs text-muted-foreground">Total Expense</p></div></CardContent></Card>
+          <Card className="border-0 shadow-sm"><CardContent className="p-4 flex items-center gap-3"><div className="p-2.5 rounded-xl bg-green-50 text-green-600"><TrendingUp className="h-5 w-5" /></div><div><p className="text-2xl font-bold">{formatCurrency(totalPaid)}</p><p className="text-xs text-muted-foreground">Paid</p></div></CardContent></Card>
+          <Card className="border-0 shadow-sm"><CardContent className="p-4 flex items-center gap-3"><div className="p-2.5 rounded-xl bg-red-50 text-red-600"><Receipt className="h-5 w-5" /></div><div><p className="text-2xl font-bold">{formatCurrency(totalUnpaid)}</p><p className="text-xs text-muted-foreground">Unpaid</p></div></CardContent></Card>
         </div>
 
-        {/* Chart */}
         {byType.length > 0 && (
           <Card className="border-0 shadow-sm">
             <CardHeader className="pb-2"><CardTitle className="text-base">Expense by Category</CardTitle></CardHeader>
@@ -156,7 +163,6 @@ export default function ExpensesPage() {
           </Card>
         )}
 
-        {/* Filters */}
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-3">
@@ -166,25 +172,16 @@ export default function ExpensesPage() {
               </div>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger className="w-full sm:w-[160px]"><SelectValue placeholder="Type" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">All Types</SelectItem>
-                  {EXPENSE_TYPES.map((t) => (<SelectItem key={t} value={t}>{t}</SelectItem>))}
-                </SelectContent>
+                <SelectContent><SelectItem value="ALL">All Types</SelectItem>{EXPENSE_TYPES.map((t) => (<SelectItem key={t} value={t}>{t}</SelectItem>))}</SelectContent>
               </Select>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full sm:w-[150px]"><SelectValue placeholder="Payment" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">All</SelectItem>
-                  <SelectItem value="PAID">Paid</SelectItem>
-                  <SelectItem value="UNPAID">Unpaid</SelectItem>
-                  <SelectItem value="PARTIAL">Partial</SelectItem>
-                </SelectContent>
+                <SelectContent><SelectItem value="ALL">All</SelectItem><SelectItem value="PAID">Paid</SelectItem><SelectItem value="UNPAID">Unpaid</SelectItem><SelectItem value="PARTIAL">Partial</SelectItem></SelectContent>
               </Select>
             </div>
           </CardContent>
         </Card>
 
-        {/* Table */}
         <Card className="border-0 shadow-sm">
           {loading ? (
             <CardContent className="p-6 space-y-3">{[...Array(5)].map((_, i) => (<Skeleton key={i} className="h-12 rounded-lg" />))}</CardContent>
@@ -201,25 +198,31 @@ export default function ExpensesPage() {
                     <TableHead className="hidden md:table-cell text-right">GST</TableHead>
                     <TableHead className="text-right">Total</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="w-[60px]" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={8} className="text-center py-12 text-muted-foreground"><Receipt className="h-8 w-8 mx-auto mb-2 opacity-30" />No expenses found</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center py-12 text-muted-foreground"><Receipt className="h-8 w-8 mx-auto mb-2 opacity-30" />No expenses found</TableCell></TableRow>
                   ) : (
                     filtered.map((e) => (
                       <TableRow key={e.id}>
-                        <TableCell className="text-xs">{formatDate(e.expenseDate)}</TableCell>
-                        <TableCell><Badge variant="outline" className="text-xs">{e.expenseType}</Badge></TableCell>
-                        <TableCell className="hidden md:table-cell">{e.vendorName || "—"}</TableCell>
+                        <TableCell className="text-xs">{formatDate(e.date)}</TableCell>
+                        <TableCell><Badge variant="outline" className="text-xs">{e.type}</Badge></TableCell>
+                        <TableCell className="hidden md:table-cell">{e.vendor || "—"}</TableCell>
                         <TableCell className="hidden lg:table-cell text-xs font-mono">{e.invoiceNumber || "—"}</TableCell>
                         <TableCell className="text-right">{formatCurrency(e.amount)}</TableCell>
                         <TableCell className="hidden md:table-cell text-right text-muted-foreground">{formatCurrency(e.gst)}</TableCell>
                         <TableCell className="text-right font-medium">{formatCurrency(e.totalAmount)}</TableCell>
+                        <TableCell><Badge variant={e.paymentStatus === "PAID" ? "success" : e.paymentStatus === "PARTIAL" ? "warning" : "destructive"}>{e.paymentStatus}</Badge></TableCell>
                         <TableCell>
-                          <Badge variant={e.paymentStatus === "PAID" ? "success" : e.paymentStatus === "PARTIAL" ? "warning" : "destructive"}>
-                            {e.paymentStatus}
-                          </Badge>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild><Button size="icon" variant="ghost" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openEdit(e)}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
+                              <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(e.id)}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))
@@ -229,6 +232,37 @@ export default function ExpensesPage() {
             </div>
           )}
         </Card>
+
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader><DialogTitle>Edit Expense</DialogTitle></DialogHeader>
+            <div className="grid gap-4 py-2">
+              <div className="grid gap-2"><Label>Description *</Label><Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-2"><Label>Type</Label><Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{EXPENSE_TYPES.map((t) => (<SelectItem key={t} value={t}>{t}</SelectItem>))}</SelectContent></Select></div>
+                <div className="grid gap-2"><Label>Payment Status</Label><Select value={form.paymentStatus} onValueChange={(v) => setForm({ ...form, paymentStatus: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="PAID">Paid</SelectItem><SelectItem value="UNPAID">Unpaid</SelectItem><SelectItem value="PARTIAL">Partial</SelectItem></SelectContent></Select></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-2"><Label>Vendor</Label><Input value={form.vendor} onChange={(e) => setForm({ ...form, vendor: e.target.value })} /></div>
+                <div className="grid gap-2"><Label>Invoice No.</Label><Input value={form.invoiceNumber} onChange={(e) => setForm({ ...form, invoiceNumber: e.target.value })} /></div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="grid gap-2"><Label>Amount (₹)</Label><Input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></div>
+                <div className="grid gap-2"><Label>GST (₹)</Label><Input type="number" value={form.gst} onChange={(e) => setForm({ ...form, gst: e.target.value })} /></div>
+                <div className="grid gap-2"><Label>Date</Label><Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-2"><Label>Company</Label><Select value={form.company} onValueChange={(v) => setForm({ ...form, company: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{COMPANIES.map((c) => (<SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>))}</SelectContent></Select></div>
+                <div className="grid gap-2"><Label>Department</Label><Select value={form.department} onValueChange={(v) => setForm({ ...form, department: v })}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{DEPARTMENTS.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}</SelectContent></Select></div>
+              </div>
+              <div className="grid gap-2"><Label>Remarks</Label><Input value={form.remarks} onChange={(e) => setForm({ ...form, remarks: e.target.value })} /></div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+              <Button onClick={handleUpdate} disabled={saving || !form.description}>{saving ? "Saving..." : "Update"}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </PageTransition>
   );
