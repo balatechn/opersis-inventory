@@ -27,7 +27,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-white/80 backdrop-blur-md px-4 lg:px-6">
+    <header className="sticky top-0 z-30 flex h-12 items-center gap-4 border-b border-gray-200 bg-white px-4 lg:px-5">
       {/* Mobile menu toggle */}
       <Button
         variant="ghost"
@@ -39,13 +39,13 @@ export function Header() {
       </Button>
 
       {/* Search */}
-      <div className="relative flex-1 max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <div className="relative flex-1 max-w-sm">
+        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search assets, software, vendors..."
           value={globalSearch}
           onChange={(e) => setGlobalSearch(e.target.value)}
-          className="pl-9 bg-gray-50 border-0 focus-visible:ring-1"
+          className="h-8 pl-8 text-sm bg-gray-50 border-0 focus-visible:ring-1"
         />
       </div>
 
@@ -53,8 +53,8 @@ export function Header() {
         {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
+            <Button variant="ghost" size="icon" className="relative h-8 w-8">
+              <Bell className="h-4 w-4" />
               {unreadCount > 0 && (
                 <Badge className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]">
                   {unreadCount}
@@ -83,9 +83,9 @@ export function Header() {
         {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-              <Avatar className="h-9 w-9">
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-xs">
+            <Button variant="ghost" className="relative h-7 w-7 rounded-full">
+              <Avatar className="h-7 w-7">
+                <AvatarFallback className="bg-blue-600 text-white text-[10px]">
                   AD
                 </AvatarFallback>
               </Avatar>
