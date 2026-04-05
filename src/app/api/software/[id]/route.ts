@@ -43,6 +43,7 @@ export async function PUT(
         purchaseDate: body.purchaseDate ? new Date(body.purchaseDate) : undefined,
         invoiceNumber: body.invoiceNumber,
         notes: body.notes,
+        renewalCycle: body.renewalCycle,
       },
     });
 

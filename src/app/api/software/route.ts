@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
         usedLicenses: body.usedLicenses || 0,
         costPerLicense: body.costPerLicense || null,
         renewalDate: body.renewalDate ? new Date(body.renewalDate) : null,
+        renewalCycle: body.renewalCycle || "NONE",
         expiryDate: body.expiryDate ? new Date(body.expiryDate) : null,
         purchaseDate: body.purchaseDate ? new Date(body.purchaseDate) : null,
         invoiceNumber: body.invoiceNumber || null,

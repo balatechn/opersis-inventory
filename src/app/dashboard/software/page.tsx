@@ -15,7 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Label } from "@/components/ui/label";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { SortableHeader } from "@/components/ui/sortable-header";
-import { Plus, Search, Package, AlertTriangle, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, Package, AlertTriangle, MoreHorizontal, Pencil, Trash2, RefreshCw } from "lucide-react";
 import { BulkUpload } from "@/components/ui/bulk-upload";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -23,6 +23,7 @@ interface SoftwareItem {
   id: string; name: string; vendor: string | null; licenseType: string;
   totalLicenses: number; usedLicenses: number; costPerLicense: number | null;
   totalCost: number | null; expiryDate: string | null; renewalDate: string | null;
+  renewalCycle: string | null;
   category: string | null; licenseKey: string | null; invoiceNumber: string | null; notes: string | null;
 }
 
@@ -40,7 +41,7 @@ export default function SoftwarePage() {
   const [pageSize, setPageSize] = useState(20);
   const [form, setForm] = useState({
     name: "", vendor: "", licenseType: "SUBSCRIPTION", totalLicenses: "1", usedLicenses: "0",
-    costPerLicense: "", expiryDate: "", renewalDate: "", category: "", licenseKey: "", invoiceNumber: "", notes: "",
+    costPerLicense: "", expiryDate: "", renewalDate: "", renewalCycle: "NONE", category: "", licenseKey: "", invoiceNumber: "", notes: "",
   });
 
   const fetchSoftware = () => {
@@ -81,20 +82,32 @@ export default function SoftwarePage() {
 
   const openEdit = (sw: SoftwareItem) => {
     setEditItem(sw);
-    setForm({ name: sw.name, vendor: sw.vendor || "", licenseType: sw.licenseType, totalLicenses: String(sw.totalLicenses), usedLicenses: String(sw.usedLicenses), costPerLicense: sw.costPerLicense ? String(sw.costPerLicense) : "", expiryDate: sw.expiryDate ? sw.expiryDate.split("T")[0] : "", renewalDate: sw.renewalDate ? sw.renewalDate.split("T")[0] : "", category: sw.category || "", licenseKey: sw.licenseKey || "", invoiceNumber: sw.invoiceNumber || "", notes: sw.notes || "" });
+    setForm({ name: sw.name, vendor: sw.vendor || "", licenseType: sw.licenseType, totalLicenses: String(sw.totalLicenses), usedLicenses: String(sw.usedLicenses), costPerLicense: sw.costPerLicense ? String(sw.costPerLicense) : "", expiryDate: sw.expiryDate ? sw.expiryDate.split("T")[0] : "", renewalDate: sw.renewalDate ? sw.renewalDate.split("T")[0] : "", renewalCycle: sw.renewalCycle || "NONE", category: sw.category || "", licenseKey: sw.licenseKey || "", invoiceNumber: sw.invoiceNumber || "", notes: sw.notes || "" });
     setEditOpen(true);
   };
 
   const handleUpdate = async () => {
     if (!editItem) return;
     setSaving(true);
-    await fetch(`/api/software/${editItem.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, totalLicenses: parseInt(form.totalLicenses) || 0, usedLicenses: parseInt(form.usedLicenses) || 0, costPerLicense: form.costPerLicense ? parseFloat(form.costPerLicense) : null, expiryDate: form.expiryDate || null, renewalDate: form.renewalDate || null }) });
+    await fetch(`/api/software/${editItem.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, totalLicenses: parseInt(form.totalLicenses) || 0, usedLicenses: parseInt(form.usedLicenses) || 0, costPerLicense: form.costPerLicense ? parseFloat(form.costPerLicense) : null, expiryDate: form.expiryDate || null, renewalDate: form.renewalDate || null, renewalCycle: form.renewalCycle || "NONE" }) });
     setSaving(false); setEditOpen(false); fetchSoftware();
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this software license?")) return;
     await fetch(`/api/software/${id}`, { method: "DELETE" }); fetchSoftware();
+  };
+
+  const handleRenew = async (sw: SoftwareItem) => {
+    if (!confirm(`Mark "${sw.name}" as renewed? This will advance the renewal and expiry dates based on the ${sw.renewalCycle?.toLowerCase()} cycle.`)) return;
+    const res = await fetch(`/api/software/${sw.id}/renew`, { method: "POST" });
+    if (res.ok) fetchSoftware();
+  };
+
+  const isRenewalDue = (date: string | null) => {
+    if (!date) return false;
+    const diff = (new Date(date).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+    return diff <= 30;
   };
 
   return (
@@ -144,12 +157,13 @@ export default function SoftwarePage() {
                       <TableHead className="text-center">Licenses</TableHead>
                       <TableHead className="hidden lg:table-cell text-right"><SortableHeader label="Cost" sortKey="totalCost" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} className="justify-end" /></TableHead>
                       <TableHead className="hidden md:table-cell"><SortableHeader label="Expires" sortKey="expiryDate" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} /></TableHead>
+                      <TableHead className="hidden lg:table-cell"><SortableHeader label="Renewal" sortKey="renewalDate" currentSort={sortKey} currentDir={sortDir} onSort={handleSort} /></TableHead>
                       <TableHead className="w-[60px]" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {paginated.length === 0 ? (
-                      <TableRow><TableCell colSpan={7} className="text-center py-12 text-muted-foreground"><Package className="h-8 w-8 mx-auto mb-2 opacity-30" />No software found</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={8} className="text-center py-12 text-muted-foreground"><Package className="h-8 w-8 mx-auto mb-2 opacity-30" />No software found</TableCell></TableRow>
                     ) : paginated.map((sw) => (
                       <TableRow key={sw.id}>
                         <TableCell><div className="font-medium">{sw.name}</div><div className="text-xs text-muted-foreground">{sw.category || "—"}</div></TableCell>
@@ -158,11 +172,13 @@ export default function SoftwarePage() {
                         <TableCell className="text-center"><span className="font-medium">{sw.usedLicenses}</span><span className="text-muted-foreground">/{sw.totalLicenses}</span>{sw.usedLicenses >= sw.totalLicenses && <Badge variant="destructive" className="ml-2 text-[10px]">Full</Badge>}</TableCell>
                         <TableCell className="hidden lg:table-cell text-right">{formatCurrency(sw.totalCost)}</TableCell>
                         <TableCell className="hidden md:table-cell"><div className="flex items-center gap-1">{isExpiringSoon(sw.expiryDate) && <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />}<span className={isExpiringSoon(sw.expiryDate) ? "text-amber-600 font-medium" : ""}>{sw.expiryDate ? formatDate(sw.expiryDate) : "Never"}</span></div></TableCell>
+                        <TableCell className="hidden lg:table-cell">{sw.renewalCycle && sw.renewalCycle !== "NONE" ? (<div className="flex flex-col gap-0.5"><div className="flex items-center gap-1">{isRenewalDue(sw.renewalDate) && <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />}<span className={isRenewalDue(sw.renewalDate) ? "text-amber-600 font-medium" : ""}>{sw.renewalDate ? formatDate(sw.renewalDate) : "—"}</span></div><Badge variant="outline" className="text-[10px] w-fit">{sw.renewalCycle}</Badge></div>) : (<span className="text-muted-foreground">—</span>)}</TableCell>
                         <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild><Button size="icon" variant="ghost" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => openEdit(sw)}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
+                              {sw.renewalCycle && sw.renewalCycle !== "NONE" && (<DropdownMenuItem onClick={() => handleRenew(sw)}><RefreshCw className="mr-2 h-4 w-4" />Mark Renewed</DropdownMenuItem>)}
                               <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(sw.id)}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -191,9 +207,10 @@ export default function SoftwarePage() {
                 <div className="grid gap-2"><Label>Used</Label><Input type="number" value={form.usedLicenses} onChange={(e) => setForm({ ...form, usedLicenses: e.target.value })} /></div>
                 <div className="grid gap-2"><Label>Cost / License</Label><Input type="number" value={form.costPerLicense} onChange={(e) => setForm({ ...form, costPerLicense: e.target.value })} /></div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div className="grid gap-2"><Label>Expiry Date</Label><Input type="date" value={form.expiryDate} onChange={(e) => setForm({ ...form, expiryDate: e.target.value })} /></div>
                 <div className="grid gap-2"><Label>Renewal Date</Label><Input type="date" value={form.renewalDate} onChange={(e) => setForm({ ...form, renewalDate: e.target.value })} /></div>
+                <div className="grid gap-2"><Label>Renewal Cycle</Label><Select value={form.renewalCycle} onValueChange={(v) => setForm({ ...form, renewalCycle: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="NONE">None</SelectItem><SelectItem value="MONTHLY">Monthly</SelectItem><SelectItem value="YEARLY">Yearly</SelectItem></SelectContent></Select></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-2"><Label>Category</Label><Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></div>

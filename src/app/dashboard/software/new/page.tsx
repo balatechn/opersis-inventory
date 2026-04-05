@@ -20,7 +20,7 @@ export default function NewSoftwarePage() {
   const [form, setForm] = useState({
     softwareName: "", vendorName: "", company: "National Consulting", department: "",
     licenseType: "SUBSCRIPTION", totalLicenses: "1", usedLicenses: "0",
-    costPerLicense: "", purchaseDate: "", expiryDate: "", renewalDate: "",
+    costPerLicense: "", purchaseDate: "", expiryDate: "", renewalDate: "", renewalCycle: "NONE",
     licenseKey: "", activationCode: "", invoiceNumber: "", category: "",
     versionEdition: "", deviceAssetTag: "", remarks: "",
   });
@@ -45,6 +45,7 @@ export default function NewSoftwarePage() {
           purchaseDate: form.purchaseDate || null,
           expiryDate: form.expiryDate || null,
           renewalDate: form.renewalDate || null,
+          renewalCycle: form.renewalCycle || "NONE",
         }),
       });
       if (!res.ok) throw new Error();
@@ -113,6 +114,17 @@ export default function NewSoftwarePage() {
               <div className="space-y-2"><Label>Purchase Date</Label><Input type="date" value={form.purchaseDate} onChange={(e) => handleChange("purchaseDate", e.target.value)} /></div>
               <div className="space-y-2"><Label>Expiry Date</Label><Input type="date" value={form.expiryDate} onChange={(e) => handleChange("expiryDate", e.target.value)} /></div>
               <div className="space-y-2"><Label>Renewal Date</Label><Input type="date" value={form.renewalDate} onChange={(e) => handleChange("renewalDate", e.target.value)} /></div>
+              <div className="space-y-2">
+                <Label>Renewal Cycle</Label>
+                <Select value={form.renewalCycle} onValueChange={(v) => handleChange("renewalCycle", v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">None</SelectItem>
+                    <SelectItem value="MONTHLY">Monthly</SelectItem>
+                    <SelectItem value="YEARLY">Yearly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2"><Label>Invoice Number</Label><Input value={form.invoiceNumber} onChange={(e) => handleChange("invoiceNumber", e.target.value)} /></div>
               <div className="space-y-2 md:col-span-2"><Label>Remarks</Label><Textarea value={form.remarks} onChange={(e) => handleChange("remarks", e.target.value)} rows={3} /></div>
             </CardContent>
