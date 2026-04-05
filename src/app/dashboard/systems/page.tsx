@@ -16,7 +16,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Label } from "@/components/ui/label";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { SortableHeader } from "@/components/ui/sortable-header";
-import { Plus, Search, Download, Monitor, Eye, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, Download, Monitor, Eye, MoreHorizontal, Pencil, Trash2, Upload } from "lucide-react";
+import { BulkUpload } from "@/components/ui/bulk-upload";
 import { formatCurrency, formatDate, COMPANIES, ASSET_STATUSES, DEPARTMENTS, LOCATIONS } from "@/lib/utils";
 
 interface Asset {
@@ -119,6 +120,13 @@ export default function SystemsPage() {
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={handleExport} className="gap-1.5"><Download className="h-4 w-4" />Export</Button>
+            <BulkUpload
+              entityName="Systems"
+              sampleHeaders={["assetTag","productName","serialNumber","make","osVersion","company","department","location","cost","status","purchaseDate","warrantyExpiry","remarks"]}
+              sampleRow={["NCPL-LAP-001","Dell XPS 15","SN12345","Dell","Windows 11 Pro","NCPL","IT Department","Ahmedabad","85000","ACTIVE","2024-01-15","2027-01-15","Development laptop"]}
+              apiEndpoint="/api/systems/bulk"
+              onComplete={fetchAssets}
+            />
             <Link href="/dashboard/systems/new"><Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" />Add Asset</Button></Link>
           </div>
         </div>

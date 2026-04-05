@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { SortableHeader } from "@/components/ui/sortable-header";
 import { Plus, Search, Receipt, Download, IndianRupee, TrendingUp, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { BulkUpload } from "@/components/ui/bulk-upload";
 import { formatCurrency, formatDate, COMPANIES, DEPARTMENTS } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, ResponsiveContainer } from "recharts";
 
@@ -121,6 +122,13 @@ export default function ExpensesPage() {
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={handleExport} className="gap-1.5"><Download className="h-4 w-4" />Export</Button>
+            <BulkUpload
+              entityName="Expenses"
+              sampleHeaders={["description","type","vendor","amount","gst","date","invoiceNumber","company","department","paymentStatus","remarks"]}
+              sampleRow={["Laptop Purchase","HARDWARE","Dell India","75000","13500","2024-06-15","INV-2024-001","NCPL","IT Department","PAID","For new developer"]}
+              apiEndpoint="/api/expenses/bulk"
+              onComplete={fetchExpenses}
+            />
             <Link href="/dashboard/expenses/new"><Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" />Add Expense</Button></Link>
           </div>
         </div>

@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { Plus, Search, Building2, Pencil, Trash2, Globe, Phone, Mail } from "lucide-react";
+import { BulkUpload } from "@/components/ui/bulk-upload";
 
 interface VendorItem {
   id: string;
@@ -113,7 +114,16 @@ export default function VendorsPage() {
             <h1 className="text-2xl font-bold text-gray-900">Vendor Management</h1>
             <p className="text-sm text-muted-foreground">{filtered.length} vendors</p>
           </div>
-          <Button size="sm" className="gap-1.5" onClick={openCreate}><Plus className="h-4 w-4" />Add Vendor</Button>
+          <div className="flex gap-2">
+            <BulkUpload
+              entityName="Vendors"
+              sampleHeaders={["name","contactPerson","email","phone","address","city","state","gstNumber","panNumber","category","website","notes"]}
+              sampleRow={["Dell Technologies","John Smith","john@dell.com","+91 98765 43210","123 Tech Park","Bangalore","Karnataka","29ABCDE1234F1Z5","ABCDE1234F","HARDWARE","https://dell.com","Primary hardware vendor"]}
+              apiEndpoint="/api/vendors/bulk"
+              onComplete={fetchVendors}
+            />
+            <Button size="sm" className="gap-1.5" onClick={openCreate}><Plus className="h-4 w-4" />Add Vendor</Button>
+          </div>
         </div>
 
         <Card className="border-0 shadow-sm">

@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { SortableHeader } from "@/components/ui/sortable-header";
 import { Plus, Search, Package, AlertTriangle, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { BulkUpload } from "@/components/ui/bulk-upload";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 interface SoftwareItem {
@@ -104,7 +105,16 @@ export default function SoftwarePage() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Software Management</h1>
             <p className="text-sm text-muted-foreground">{filtered.length} software licenses</p>
           </div>
-          <Link href="/dashboard/software/new"><Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" />Add Software</Button></Link>
+          <div className="flex gap-2">
+            <BulkUpload
+              entityName="Software"
+              sampleHeaders={["name","vendor","licenseType","totalLicenses","usedLicenses","costPerLicense","expiryDate","renewalDate","licenseKey","category","notes"]}
+              sampleRow={["Microsoft 365","Microsoft","SUBSCRIPTION","50","35","800","2025-12-31","2025-11-30","XXXXX-XXXXX","Productivity","Annual renewal"]}
+              apiEndpoint="/api/software/bulk"
+              onComplete={fetchSoftware}
+            />
+            <Link href="/dashboard/software/new"><Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" />Add Software</Button></Link>
+          </div>
         </div>
 
         <Card className="border-0 shadow-sm">

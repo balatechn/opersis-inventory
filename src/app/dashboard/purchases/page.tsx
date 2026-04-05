@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { SortableHeader } from "@/components/ui/sortable-header";
 import { Plus, Search, ShoppingCart, MoreHorizontal, Pencil, Trash2, CheckCircle, XCircle, Clock, CreditCard, Truck, AlertTriangle } from "lucide-react";
+import { BulkUpload } from "@/components/ui/bulk-upload";
 import { formatCurrency, formatDate, COMPANIES, DEPARTMENTS } from "@/lib/utils";
 
 interface PurchaseItem {
@@ -183,9 +184,18 @@ export default function PurchasesPage() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Purchase Requests</h1>
             <p className="text-sm text-muted-foreground">{filtered.length} purchase records</p>
           </div>
-          <Link href="/dashboard/purchases/new">
-            <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" />New Request</Button>
-          </Link>
+          <div className="flex gap-2">
+            <BulkUpload
+              entityName="Purchases"
+              sampleHeaders={["productName","requestedBy","category","quantity","estimatedCost","vendorName","company","department","priority","justification","remarks"]}
+              sampleRow={["Dell Monitor 27\"","Rahul K","HARDWARE","5","15000","Dell India","NCPL","IT Department","MEDIUM","New monitors for dev team","Urgent requirement"]}
+              apiEndpoint="/api/purchases/bulk"
+              onComplete={fetchPurchases}
+            />
+            <Link href="/dashboard/purchases/new">
+              <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" />New Request</Button>
+            </Link>
+          </div>
         </div>
 
         {/* Status summary cards */}
