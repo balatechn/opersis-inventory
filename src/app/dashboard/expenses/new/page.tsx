@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Save } from "lucide-react";
-import { COMPANIES, DEPARTMENTS } from "@/lib/utils";
+import { useSettings } from "@/hooks/use-settings";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -18,6 +18,7 @@ const EXPENSE_TYPES = ["HARDWARE", "SOFTWARE", "INTERNET", "AMC", "CLOUD", "LICE
 
 export default function NewExpensePage() {
   const router = useRouter();
+  const { companies, departments } = useSettings();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     expenseDate: new Date().toISOString().split("T")[0],
@@ -93,14 +94,14 @@ export default function NewExpensePage() {
                 <Label>Company</Label>
                 <Select value={form.company} onValueChange={(v) => handleChange("company", v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{COMPANIES.map((c) => (<SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>))}</SelectContent>
+                  <SelectContent>{companies.map((c) => (<SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>))}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Department</Label>
                 <Select value={form.department} onValueChange={(v) => handleChange("department", v)}>
                   <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>{DEPARTMENTS.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}</SelectContent>
+                  <SelectContent>{departments.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}</SelectContent>
                 </Select>
               </div>
             </CardContent>

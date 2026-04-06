@@ -16,12 +16,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowLeft, Save } from "lucide-react";
-import { COMPANIES, DEPARTMENTS, LOCATIONS, ASSET_STATUSES } from "@/lib/utils";
+import { ASSET_STATUSES } from "@/lib/utils";
+import { useSettings } from "@/hooks/use-settings";
 import { toast } from "sonner";
 import Link from "next/link";
 
 export default function NewSystemPage() {
   const router = useRouter();
+  const { companies, locations, departments } = useSettings();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     assetTag: "",
@@ -176,7 +178,7 @@ export default function NewSystemPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {COMPANIES.map((c) => (
+                    {companies.map((c) => (
                       <SelectItem key={c.value} value={c.value}>
                         {c.label}
                       </SelectItem>
@@ -191,7 +193,7 @@ export default function NewSystemPage() {
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
-                    {DEPARTMENTS.map((d) => (
+                    {departments.map((d) => (
                       <SelectItem key={d} value={d}>
                         {d}
                       </SelectItem>
@@ -206,7 +208,7 @@ export default function NewSystemPage() {
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
-                    {LOCATIONS.map((l) => (
+                    {locations.map((l) => (
                       <SelectItem key={l} value={l}>
                         {l}
                       </SelectItem>

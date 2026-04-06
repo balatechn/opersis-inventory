@@ -10,12 +10,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Save } from "lucide-react";
-import { DEPARTMENTS } from "@/lib/utils";
+import { useSettings } from "@/hooks/use-settings";
 import { toast } from "sonner";
 import Link from "next/link";
 
 export default function NewSoftwarePage() {
   const router = useRouter();
+  const { departments } = useSettings();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     softwareName: "", vendorName: "", company: "National Consulting", department: "",
@@ -79,7 +80,7 @@ export default function NewSoftwarePage() {
                 <Label>Department</Label>
                 <Select value={form.department} onValueChange={(v) => handleChange("department", v)}>
                   <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>{DEPARTMENTS.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}</SelectContent>
+                  <SelectContent>{departments.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-2"><Label>Version / Edition</Label><Input value={form.versionEdition} onChange={(e) => handleChange("versionEdition", e.target.value)} /></div>

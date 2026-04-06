@@ -18,7 +18,8 @@ import { TablePagination } from "@/components/ui/table-pagination";
 import { SortableHeader } from "@/components/ui/sortable-header";
 import { Plus, Search, ShoppingCart, MoreHorizontal, Pencil, Trash2, CheckCircle, XCircle, Clock, CreditCard, Truck, AlertTriangle } from "lucide-react";
 import { BulkUpload } from "@/components/ui/bulk-upload";
-import { formatCurrency, formatDate, COMPANIES, DEPARTMENTS } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { useSettings } from "@/hooks/use-settings";
 
 interface PurchaseItem {
   id: string; productName: string; category: string; vendor?: string; vendorName?: string;
@@ -43,6 +44,7 @@ const priorityColor: Record<string, string> = {
 };
 
 export default function PurchasesPage() {
+  const { companies, departments } = useSettings();
   const [purchases, setPurchases] = useState<PurchaseItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -358,8 +360,8 @@ export default function PurchasesPage() {
                 <div className="grid gap-2"><Label>Actual Cost (₹)</Label><Input type="number" value={form.actualCost} onChange={(e) => setForm({ ...form, actualCost: e.target.value })} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="grid gap-2"><Label>Company</Label><Select value={form.company} onValueChange={(v) => setForm({ ...form, company: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{COMPANIES.map((c) => (<SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>))}</SelectContent></Select></div>
-                <div className="grid gap-2"><Label>Department</Label><Select value={form.department} onValueChange={(v) => setForm({ ...form, department: v })}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{DEPARTMENTS.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}</SelectContent></Select></div>
+                <div className="grid gap-2"><Label>Company</Label><Select value={form.company} onValueChange={(v) => setForm({ ...form, company: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{companies.map((c) => (<SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>))}</SelectContent></Select></div>
+                <div className="grid gap-2"><Label>Department</Label><Select value={form.department} onValueChange={(v) => setForm({ ...form, department: v })}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{departments.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}</SelectContent></Select></div>
               </div>
               <div className="grid gap-2"><Label>Invoice Number</Label><Input value={form.invoiceNumber} onChange={(e) => setForm({ ...form, invoiceNumber: e.target.value })} /></div>
               <div className="grid gap-2"><Label>Justification</Label><Textarea rows={2} value={form.justification} onChange={(e) => setForm({ ...form, justification: e.target.value })} /></div>

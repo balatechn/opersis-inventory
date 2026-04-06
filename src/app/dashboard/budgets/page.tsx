@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { Plus, Wallet, TrendingUp, AlertTriangle, Pencil, Trash2, IndianRupee } from "lucide-react";
-import { formatCurrency, COMPANIES, DEPARTMENTS } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
+import { useSettings } from "@/hooks/use-settings";
 
 interface BudgetItem {
   id: string;
@@ -41,6 +42,7 @@ const MONTHS = ["", "January", "February", "March", "April", "May", "June", "Jul
 const currentYear = new Date().getFullYear();
 
 export default function BudgetsPage() {
+  const { companies, departments } = useSettings();
   const [budgets, setBudgets] = useState<BudgetItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [yearFilter, setYearFilter] = useState(String(currentYear));
@@ -252,14 +254,14 @@ export default function BudgetsPage() {
                   <Label>Company</Label>
                   <Select value={form.company} onValueChange={(v) => setForm({ ...form, company: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{COMPANIES.map((c) => (<SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>))}</SelectContent>
+                    <SelectContent>{companies.map((c) => (<SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>))}</SelectContent>
                   </Select>
                 </div>
                 <div className="grid gap-2">
                   <Label>Department</Label>
                   <Select value={form.department} onValueChange={(v) => setForm({ ...form, department: v })}>
                     <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
-                    <SelectContent>{DEPARTMENTS.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}</SelectContent>
+                    <SelectContent>{departments.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}</SelectContent>
                   </Select>
                 </div>
               </div>

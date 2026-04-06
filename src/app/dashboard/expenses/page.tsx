@@ -17,7 +17,8 @@ import { TablePagination } from "@/components/ui/table-pagination";
 import { SortableHeader } from "@/components/ui/sortable-header";
 import { Plus, Search, Receipt, Download, IndianRupee, TrendingUp, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { BulkUpload } from "@/components/ui/bulk-upload";
-import { formatCurrency, formatDate, COMPANIES, DEPARTMENTS } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { useSettings } from "@/hooks/use-settings";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, ResponsiveContainer } from "recharts";
 
 interface ExpenseItem {
@@ -29,6 +30,7 @@ interface ExpenseItem {
 const EXPENSE_TYPES = ["HARDWARE", "SOFTWARE", "INTERNET_TELECOM", "AMC", "CLOUD_SERVICES", "LICENSING", "MAINTENANCE", "CONSUMABLES", "NETWORKING", "OTHER"];
 
 export default function ExpensesPage() {
+  const { companies, departments } = useSettings();
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -245,8 +247,8 @@ export default function ExpensesPage() {
                 <div className="grid gap-2"><Label>Date</Label><Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="grid gap-2"><Label>Company</Label><Select value={form.company} onValueChange={(v) => setForm({ ...form, company: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{COMPANIES.map((c) => (<SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>))}</SelectContent></Select></div>
-                <div className="grid gap-2"><Label>Department</Label><Select value={form.department} onValueChange={(v) => setForm({ ...form, department: v })}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{DEPARTMENTS.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}</SelectContent></Select></div>
+                <div className="grid gap-2"><Label>Company</Label><Select value={form.company} onValueChange={(v) => setForm({ ...form, company: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{companies.map((c) => (<SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>))}</SelectContent></Select></div>
+                <div className="grid gap-2"><Label>Department</Label><Select value={form.department} onValueChange={(v) => setForm({ ...form, department: v })}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{departments.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}</SelectContent></Select></div>
               </div>
               <div className="grid gap-2"><Label>Remarks</Label><Input value={form.remarks} onChange={(e) => setForm({ ...form, remarks: e.target.value })} /></div>
             </div>

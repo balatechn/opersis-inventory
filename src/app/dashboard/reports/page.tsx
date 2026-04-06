@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Download, BarChart3, FileText, Package, Building2, MapPin } from "lucide-react";
-import { formatCurrency, COMPANIES, LOCATIONS } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
+import { useSettings } from "@/hooks/use-settings";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -56,6 +57,7 @@ const softwareRenewals = [
 ];
 
 export default function ReportsPage() {
+  const { companies, locations } = useSettings();
   const [dateFrom, setDateFrom] = useState("2025-10-01");
   const [dateTo, setDateTo] = useState("2026-03-31");
   const [companyFilter, setCompanyFilter] = useState("ALL");
@@ -94,7 +96,7 @@ export default function ReportsPage() {
                   <SelectTrigger className="w-full sm:w-[160px]"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ALL">All Companies</SelectItem>
-                    {COMPANIES.map((c) => (<SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>))}
+                    {companies.map((c) => (<SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>))}
                   </SelectContent>
                 </Select>
               </div>
@@ -104,7 +106,7 @@ export default function ReportsPage() {
                   <SelectTrigger className="w-full sm:w-[160px]"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ALL">All Locations</SelectItem>
-                    {LOCATIONS.map((l) => (<SelectItem key={l} value={l}>{l}</SelectItem>))}
+                    {locations.map((l) => (<SelectItem key={l} value={l}>{l}</SelectItem>))}
                   </SelectContent>
                 </Select>
               </div>

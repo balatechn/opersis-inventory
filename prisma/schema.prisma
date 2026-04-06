@@ -341,3 +341,17 @@ model Vendor {
   @@index([name])
   @@index([category])
 }
+
+// ─── APP SETTINGS ────────────────────────────────────────
+model AppSettings {
+  id               String   @id @default("default")
+  orgName          String   @default("National Group India")
+  currency         String   @default("INR")
+  depreciationRate Float    @default(25)
+  renewalAlertDays Int      @default(30)
+  companies        String   @default("[]")
+  departments      String   @default("[]")
+  locations        String   @default("[]")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}

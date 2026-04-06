@@ -18,7 +18,8 @@ import { TablePagination } from "@/components/ui/table-pagination";
 import { SortableHeader } from "@/components/ui/sortable-header";
 import { Plus, Search, Download, Monitor, Eye, MoreHorizontal, Pencil, Trash2, Upload } from "lucide-react";
 import { BulkUpload } from "@/components/ui/bulk-upload";
-import { formatCurrency, formatDate, COMPANIES, ASSET_STATUSES, DEPARTMENTS, LOCATIONS } from "@/lib/utils";
+import { formatCurrency, formatDate, ASSET_STATUSES } from "@/lib/utils";
+import { useSettings } from "@/hooks/use-settings";
 
 interface Asset {
   id: string; assetTag: string; productName: string; serialNumber: string | null;
@@ -84,7 +85,8 @@ export default function SystemsPage() {
     const s = ASSET_STATUSES.find((st) => st.value === status);
     return <Badge className={s?.color || ""}>{s?.label || status}</Badge>;
   };
-  const getCompanyLabel = (val: string) => COMPANIES.find((c) => c.value === val)?.label || val;
+  const { companies, locations, departments } = useSettings();
+  const getCompanyLabel = (val: string) => companies.find((c) => c.value === val)?.label || val;
 
   const handleExport = () => {
     const csv = [["Asset Tag","Product","Serial","Company","Department","Location","Status","Cost"], ...filtered.map((a) => [a.assetTag, a.productName, a.serialNumber || "", getCompanyLabel(a.company), a.department || "", a.location || "", a.status, String(a.cost || 0)])].map((r) => r.join(",")).join("\n");
@@ -144,7 +146,7 @@ export default function SystemsPage() {
               </Select>
               <Select value={companyFilter} onValueChange={(v) => { setCompanyFilter(v); setPage(1); }}>
                 <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Company" /></SelectTrigger>
-                <SelectContent><SelectItem value="ALL">All Companies</SelectItem>{COMPANIES.map((c) => (<SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>))}</SelectContent>
+                <SelectContent><SelectItem value="ALL">All Companies</SelectItem>{companies.map((c) => (<SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>))}</SelectContent>
               </Select>
             </div>
           </CardContent>
@@ -211,12 +213,12 @@ export default function SystemsPage() {
                 <div className="grid gap-2"><Label>Make</Label><Input value={form.make} onChange={(e) => setForm({ ...form, make: e.target.value })} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="grid gap-2"><Label>Company</Label><Select value={form.company} onValueChange={(v) => setForm({ ...form, company: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{COMPANIES.map((c) => (<SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>))}</SelectContent></Select></div>
+                <div className="grid gap-2"><Label>Company</Label><Select value={form.company} onValueChange={(v) => setForm({ ...form, company: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{companies.map((c) => (<SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>))}</SelectContent></Select></div>
                 <div className="grid gap-2"><Label>Status</Label><Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{ASSET_STATUSES.map((s) => (<SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>))}</SelectContent></Select></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="grid gap-2"><Label>Department</Label><Select value={form.department} onValueChange={(v) => setForm({ ...form, department: v })}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{DEPARTMENTS.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}</SelectContent></Select></div>
-                <div className="grid gap-2"><Label>Location</Label><Select value={form.location} onValueChange={(v) => setForm({ ...form, location: v })}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{LOCATIONS.map((l) => (<SelectItem key={l} value={l}>{l}</SelectItem>))}</SelectContent></Select></div>
+                <div className="grid gap-2"><Label>Department</Label><Select value={form.department} onValueChange={(v) => setForm({ ...form, department: v })}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{departments.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}</SelectContent></Select></div>
+                <div className="grid gap-2"><Label>Location</Label><Select value={form.location} onValueChange={(v) => setForm({ ...form, location: v })}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{locations.map((l) => (<SelectItem key={l} value={l}>{l}</SelectItem>))}</SelectContent></Select></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-2"><Label>Cost (₹)</Label><Input type="number" value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} /></div>

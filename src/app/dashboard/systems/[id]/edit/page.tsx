@@ -17,13 +17,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowLeft, Save } from "lucide-react";
-import { COMPANIES, DEPARTMENTS, LOCATIONS, ASSET_STATUSES } from "@/lib/utils";
+import { ASSET_STATUSES } from "@/lib/utils";
+import { useSettings } from "@/hooks/use-settings";
 import { toast } from "sonner";
 import Link from "next/link";
 
 export default function EditSystemPage() {
   const params = useParams();
   const router = useRouter();
+  const { companies, locations, departments } = useSettings();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -196,7 +198,7 @@ export default function EditSystemPage() {
                 <Select value={form.company} onValueChange={(v) => handleChange("company", v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {COMPANIES.map((c) => (<SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>))}
+                    {companies.map((c) => (<SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>))}
                   </SelectContent>
                 </Select>
               </div>
@@ -205,7 +207,7 @@ export default function EditSystemPage() {
                 <Select value={form.department} onValueChange={(v) => handleChange("department", v)}>
                   <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
-                    {DEPARTMENTS.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}
+                    {departments.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}
                   </SelectContent>
                 </Select>
               </div>
@@ -214,7 +216,7 @@ export default function EditSystemPage() {
                 <Select value={form.location} onValueChange={(v) => handleChange("location", v)}>
                   <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
-                    {LOCATIONS.map((l) => (<SelectItem key={l} value={l}>{l}</SelectItem>))}
+                    {locations.map((l) => (<SelectItem key={l} value={l}>{l}</SelectItem>))}
                   </SelectContent>
                 </Select>
               </div>
