@@ -27,8 +27,8 @@ interface UserItem {
   updatedAt: string;
 }
 
-const ROLES = ["ADMIN", "IT_MANAGER", "VIEWER"];
-const roleColors: Record<string, string> = { ADMIN: "destructive", IT_MANAGER: "warning", VIEWER: "secondary" };
+const ROLES = ["ADMIN", "IT_MANAGER", "VIEWER", "ASSET_ENTRY"];
+const roleColors: Record<string, string> = { ADMIN: "destructive", IT_MANAGER: "warning", VIEWER: "secondary", ASSET_ENTRY: "info" };
 
 export default function UsersPage() {
   const [users, setUsers] = useState<UserItem[]>([]);

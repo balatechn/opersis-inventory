@@ -31,6 +31,13 @@ interface Asset {
 }
 
 export default function SystemsPage() {
+  // Get user role from session or context (replace with your actual session hook)
+  let userRole = "";
+  if (typeof window !== "undefined") {
+    try {
+      userRole = JSON.parse(localStorage.getItem("user") || "{}").role || "";
+    } catch {}
+  }
   const router = useRouter();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
@@ -189,7 +196,9 @@ export default function SystemsPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => router.push(`/dashboard/systems/${asset.id}`)}><Eye className="mr-2 h-4 w-4" />View</DropdownMenuItem>
                               <DropdownMenuItem onClick={() => openEdit(asset)}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
-                              <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(asset.id)}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+                              {userRole !== "ASSET_ENTRY" && (
+                                <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(asset.id)}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { withAuth } from "@/lib/auth";
 
 export async function GET(
   req: NextRequest,
@@ -77,15 +78,20 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
+export const DELETE = withAuth(async (
   req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+  user
+) => {
+  // Extract asset id from URL
+  const urlParts = req.url.split("/");
+  const id = urlParts[urlParts.length - 1];
+  if (user.role === "ASSET_ENTRY") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   try {
     const asset = await prisma.systemAsset.delete({
-      where: { id: params.id },
+      where: { id },
     });
-
     await prisma.auditLog.create({
       data: {
         action: "Asset Deleted",
@@ -94,10 +100,9 @@ export async function DELETE(
         details: `Asset ${asset.assetTag} deleted`,
       },
     });
-
     return NextResponse.json({ message: "Asset deleted" });
   } catch (error) {
     console.error("System DELETE error:", error);
     return NextResponse.json({ error: "Failed to delete asset" }, { status: 500 });
   }
-}
+}, ["ADMIN", "IT_MANAGER"]);

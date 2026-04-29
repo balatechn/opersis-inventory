@@ -4,6 +4,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/useStore";
+
+// Get user role from localStorage (replace with your actual session hook if available)
+function getUserRole() {
+  if (typeof window !== "undefined") {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "{}").role || "";
+    } catch {}
+  }
+  return "";
+}
 import {
   LayoutDashboard,
   Monitor,
@@ -112,16 +122,20 @@ export function Sidebar() {
           {menuItems.map(renderNavItem)}
         </div>
 
-        {/* ADMIN section */}
-        {sidebarOpen && (
-          <div className="px-3 mb-2 mt-5">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">Admin</span>
-          </div>
+        {/* ADMIN section - hide for ASSET_ENTRY */}
+        {getUserRole() !== "ASSET_ENTRY" && (
+          <>
+            {sidebarOpen && (
+              <div className="px-3 mb-2 mt-5">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">Admin</span>
+              </div>
+            )}
+            {!sidebarOpen && <div className="my-3 mx-2 border-t border-white/10" />}
+            <div className="space-y-0.5">
+              {adminItems.map(renderNavItem)}
+            </div>
+          </>
         )}
-        {!sidebarOpen && <div className="my-3 mx-2 border-t border-white/10" />}
-        <div className="space-y-0.5">
-          {adminItems.map(renderNavItem)}
-        </div>
       </nav>
 
       {/* User card + Collapse */}

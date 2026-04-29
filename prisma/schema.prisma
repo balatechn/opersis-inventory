@@ -12,6 +12,7 @@ enum Role {
   ADMIN
   IT_MANAGER
   VIEWER
+  ASSET_ENTRY
 }
 
 model User {
